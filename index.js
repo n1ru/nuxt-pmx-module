@@ -1,17 +1,16 @@
 const pmx = require("pmx");
 
-function round(x) {
-  return Number.parseFloat(x).toFixed(2);
-}
-
 /**
- * Модуль для сбора всяких разных метрик в pmx.
- * Собирает метрики:
- * Http latency, RPS, Network Download/Upload, Active handles/requests, rss, heapTotal, heapUsed,
+ * This module collect following metrics:
+ * - pmx:http:latency - request processing time, same as pmx http metric
+ * - HTTP - RPS counter, same as pmx http metric
+ * - Network Download/Upload - default pmx network metric
+ * - Active handles/requests - default pmx network metric
+ * - memory:rss/heapTotal/heapUsed - memory usage of the Node.js process from process.memoryUsage()
  */
 module.exports = function PmxModule() {
   pmx.init({
-    // Включаем сбор метрик: Network Download/Upload, Active handles/requests
+    // Enable Network Download/Upload, Active handles/requests metrics
     network: true
   });
 
@@ -21,16 +20,14 @@ module.exports = function PmxModule() {
 };
 
 /**
- * Инициализирует сбор данных о потреблении памяти нодой.
- * Собирает метрики:
- * `memory:rss` -  Общий размер выделенной памяти на процесс
- * `memory:heapTotal` - Сколько памяти выделено на heap
- * `memory:heapUsed` - Сколько памяти из heap используется
- * @param {number} interval - Интервал через который собираем метрики
+ * Init collecting of memory usage metrics:
+ * - memory:rss -  total memory allocated for the process execution
+ * - memory:heapTotal - total size of the allocated heap
+ * - memory:heapUsed - actual memory used during the execution of our process
+ * @param {number} interval - time interval between probes
  */
 function initMemoryUsageMetric(interval = 5000) {
-  // Коэффициент для перевода памяти в байтах в мегабайты
-  const scale = 1024 * 1024;
+  const megaMultiplier = 1024 * 1024;
   const probe = pmx.probe();
 
   const probeMemoryUsage = () => {
@@ -38,17 +35,17 @@ function initMemoryUsageMetric(interval = 5000) {
 
     probe.metric({
       name: `memory:rss`,
-      value: round(rss / scale, 2),
+      value: toFixed2(rss / megaMultiplier),
       unit: "MB"
     });
     probe.metric({
       name: `memory:heapTotal`,
-      value: round(heapTotal / scale, 2),
+      value: toFixed2(heapTotal / megaMultiplier),
       unit: "MB"
     });
     probe.metric({
       name: `memory:heapUsed`,
-      value: round(heapUsed / scale, 2),
+      value: toFixed2(heapUsed / megaMultiplier),
       unit: "MB"
     });
   };
@@ -60,25 +57,24 @@ function initMemoryUsageMetric(interval = 5000) {
 }
 
 /*
- * Создает Middleware для сбора http latency и RPS.
- * Повторяет логику сбора одноименных метрик в pmx.
+ * Creates a middleware for collecting http latency and RPS metrics.
+ * It reproduce pmx http metric.
  * 
- * Мы не можем использовать стандартную http метрику для сбора RPS и Latency `pmx.init({ http: true })`,
- * потому что для этого нужно инициализировать pmx до запуска http сервера Nuxt.
- * В Nuxt нет хуков которые бы позволяли инициализировать что-то до запуска http сервера.
- * Имена метрик такие же как в pmx:
- *   'HTTP' - Счетчик rps,
- *   'pmx:http:latency' - Общее время обработки запроса от поступления в ноду до ответа ноды.
+ * `pmx.init({ http: true })` command has to be initialized before Nuxt http server,
+ * but there are no Nuxt hooks called before Nuxt server initialization, so we can't use built-in pmx http metric.
+ * We are using pmx metrics names:
+ * - HTTP - RPS counter
+ * - pmx:http:latency - request processing time.
  */
 function createHttpMetricsMiddleware() {
   const probe = pmx.probe();
-  // Счетчик RPS
+
   const rpsMeter = probe.meter({
     name: "HTTP",
     samples: 1,
     unit: "req/s"
   });
-  // Счетчик для http latency
+
   const latencyHist = probe.histogram({
     measurement: "mean",
     name: "pmx:http:latency",
@@ -86,16 +82,19 @@ function createHttpMetricsMiddleware() {
   });
 
   return (req, res, next) => {
-    // Собираем RPS
     rpsMeter.mark();
-    // Считаем latency
+
     const start = process.hrtime();
     res.once("finish", () => {
       const [seconds, nanoseconds] = process.hrtime(start);
-      const msLatency = round(seconds * 1000 + nanoseconds / 1e6);
+      const msLatency = toFixed2(seconds * 1000 + nanoseconds / 1e6);
       latencyHist.update(msLatency);
     });
 
     next();
   };
+}
+
+function toFixed2(x) {
+  return Number.parseFloat(x).toFixed(2);
 }
