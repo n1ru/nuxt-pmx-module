@@ -1,9 +1,15 @@
 {
   "name": "nuxt-pmx-module",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Probe http and memory metrics to pmx",
   "main": "index.js",
   "author": "Глеб Фокин <g.fokin@n1.ru>",
   "license": "MIT",
-  "private": false
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/n1ru/nuxt-pmx-module"
+  },
+  "homepage": "https://github.com/n1ru/nuxt-pmx-module/tree/master",
+  "keywords": ["nuxt", "pmx"]
 }
