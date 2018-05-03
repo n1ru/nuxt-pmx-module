@@ -1,16 +1,15 @@
- # Nuxt pmx module
- Модуль для сбора http и memory метрик в pmx.
- После подключения модуля, в `pm2 monit` будут доступны следующие метрики:
- * pmx:http:latency
- * HTTP (RPS)
- * memory:rss
- * memory:heapTotal
- * memory:heapUsed
- * Network Download/Upload
- * Active handles/requests
+ # :mag: PMX module
+> Add base pmx http, network and memory metrics to Nuxt.js project
 
- ## Проблема
- Мы не можем использовать стандартную http метрику для сбора RPS и Latency через `pmx.init({ http: true })`, потому что для этого нужно инициализировать pmx до запуска http сервера Nuxt. В Nuxt нет хуков которые бы позволяли инициализировать что-то до запуска http сервера.
+This module collect following metrics, this metrics are available at `pm2 monit` command:
+ * `pmx:http:latency` - request processing time, same as pmx `pmx:http:latency` metric
+ * `HTTP` - RPS counter, same as pmx `HTTP` metric
+ * `Network Download`, `Network Upload` - default pmx network metric
+ * `Active handles`, `Active requests` - default pmx network metric
+ * `memory:rss`, `memory:heapTotal`, `memory:heapUsed` - memory usage of the Node.js process from process.memoryUsage()
+
+ ## Motivation
+ We can't use native pmx http metric, because `pmx.init({ http: true })` command has to be initialized before Nuxt http server. Unfortunately, there are no nuxt hooks that called before Nuxt server initialization :(
 
 ## Setup 
 * Add @n1ru/nuxt-pmx-module dependency using yarn or npm to your project
