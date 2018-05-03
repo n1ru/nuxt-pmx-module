@@ -57,12 +57,12 @@ function initMemoryUsageMetric(interval = 5000) {
 }
 
 /*
- * Create middleware for collecting http latency and RPS metrics.
+ * Creates a middleware for collecting http latency and RPS metrics.
  * It reproduce pmx http metric.
  * 
- * We can't use native pmx http metric, because pmx http metric have to be initialized before 
- * Nuxt http server. There are no nuxt hooks that called before Nuxt server initialization.
- * We are using same metrics names as pmx:
+ * `pmx.init({ http: true })` command has to be initialized before Nuxt http server,
+ * but there are no Nuxt hooks called before Nuxt server initialization, so we can't use built-in pmx http metric.
+ * We are using pmx metrics names:
  * - HTTP - RPS counter
  * - pmx:http:latency - request processing time.
  */
