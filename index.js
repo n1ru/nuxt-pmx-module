@@ -19,6 +19,8 @@ module.exports = function PmxModule() {
   this.addServerMiddleware(createHttpMetricsMiddleware());
 };
 
+module.exports.meta = require("./package.json");
+
 /**
  * Init collecting of memory usage metrics:
  * - memory:rss -  total memory allocated for the process execution
